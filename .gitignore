@@ -1,0 +1,15 @@
+/target
+**/*.rs.bk
+*.pdb
+
+/config/beehive.toml
+.env
+.env.*
+
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+AGENTS.md
+CONTEXT.md

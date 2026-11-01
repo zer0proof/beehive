@@ -1,0 +1,11 @@
+# Copy this file to `config/beehive.toml` and edit for your setup.
+# `config/beehive.toml` is gitignored so machine-specific paths stay local.
+
+# Which coordinator backend to use: "mock" or "ezsp".
+# The --backend flag on the CLI overrides this value.
+backend = "mock"
+
+# Silicon Labs NCP settings, used when backend = "ezsp".
+[ezsp]
+serial = "/dev/ttyUSB0"
+baud = 115200

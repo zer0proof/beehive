@@ -1,0 +1,49 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/beehive-core",
+    "crates/beehive-ezsp",
+    "crates/beehive-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+# Internal crates
+beehive-core = { path = "crates/beehive-core" }
+beehive-ezsp = { path = "crates/beehive-ezsp" }
+
+# Async runtime and serial I/O
+tokio = { version = "1.54", features = ["rt-multi-thread", "macros", "signal", "time", "sync"] }
+tokio-serial = "5.5"
+futures = "0.3"
+async-trait = "0.1"
+
+# ZigBee host stack (Silicon Labs NCPs: CC2652, EFR32, ...)
+ezsp = "19"
+ashv2 = { version = "15", features = ["ezsp"] }
+
+# CLI, config, logging, errors
+anyhow = "1.0"
+thiserror = "2.0"
+clap = { version = "4.6", features = ["derive", "env"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1.29", features = ["v4", "serde"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[profile.release]
+lto = "thin"
+strip = "debuginfo"
