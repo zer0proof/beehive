@@ -1,6 +1,6 @@
 # ADR 0001 — Learning first
 
-- **Status:** accepted
+- **Status:** accepted; hardware assumption updated by ADR 0002
 - **Date:** 2026-11-01
 - **Deciders:** project owner
 

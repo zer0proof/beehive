@@ -64,9 +64,15 @@ demonstrate. Steps 1–3 need **no hardware**.
 | 1 | 802.15.4 MAC header dissector | enums, `match`, `Result`, `Option`, slicing, tests | frame control, addressing, endianness |
 | 2 | NWK + APS decoder | borrowing, iterators, custom errors, `TryFrom` | network/APS layers, endpoints, clusters |
 | 3 | ZCL payload decoder | traits, enums with data, generics, codecs | clusters, attributes, commands, data types |
-| 4 | Serial framing + loopback tests | async/await, tasks, channels, timeouts | host↔NCP framing (ASH) |
-| 5 | EZSP subset: version, network init, permit join | actor pattern, state machines, error context | commissioning |
+| 4 | Serial framing + loopback tests | async/await, tasks, channels, timeouts | host↔NCP framing (ZNP/UNPI) |
+| 5 | ZNP subset: version, network init, permit join | actor pattern, state machines, error context | commissioning |
 | 6 | Device interview + On/Off control | API/CLI design, modules | discovery, binding, ZCL commands |
+
+**Two different frame worlds — don't mix them up.** Steps 1–3 parse
+*over-the-air* 802.15.4/ZigBee frames: the bytes a sniffer captures. Steps 4–5
+parse *host↔NCP* ZNP frames, which the CC2531 coordinator uses to exchange
+commands and payloads with the host. An over-the-air frame starts with its
+frame-control field; a ZNP frame starts with `0xFE`.
 
 ### Step 0 — Run the skeleton
 
@@ -121,6 +127,10 @@ fields are little-endian.
 Verify these against the standard rather than trusting them. If a field is
 ambiguous, tell me what you think and why.
 
+These are *over-the-air* MAC frames, not ZNP frames. If you have a spare
+CC2531, flash it with sniffer firmware and capture real traffic; use Wireshark
+to check yourself. Otherwise the vectors above are enough.
+
 **Done when:**
 
 - All three vectors produce the expected result.
@@ -159,39 +169,44 @@ start of a real type system for device data.
 
 **Done when:** you can take a real report from a sensor and explain every byte.
 
-### Step 4 — Serial framing
+### Step 4 — Serial framing (ZNP/UNPI)
 
-**Build:** a `Transport` that reads bytes from a serial port and yields frames.
-First implement and test it against an in-memory reader; only then point it at
-`/dev/ttyUSB0` (or `/dev/serial/by-id/...`).
+**Build:** a `Transport` that reads bytes from the CC2531's serial port and
+yields complete ZNP/UNPI frames. First implement and test it against an
+in-memory reader; only then point it at `/dev/ttyACM0` (or
+`/dev/serial/by-id/...`).
 
 **Rust:** `async`/`await`, `tokio`, splitting a stream, `mpsc` channels,
 timeouts, cancellation, ownership across tasks.
 
-**ZigBee:** why a host/NCP link needs framing and flow control; ASH concepts
-(flags, CRC, sequence, ACK/NAK, retransmission).
+**ZigBee:** why a host/NCP link needs framing; the UNPI frame layout
+(`0xFE | len | cmd0 | cmd1 | data | fcs`), the XOR checksum, `SREQ`/`SRSP` vs
+`AREQ`, and resynchronising when a frame is truncated or a byte is lost.
 
 **Done when:** a loopback test reassembles frames split at arbitrary byte
-boundaries, and a real serial port opens without root.
+boundaries, a bad FCS is rejected, and a real CC2531 serial port opens without
+root.
 
-### Step 5 — EZSP subset
+### Step 5 — ZNP subset
 
-**Build:** the smallest EZSP client that works: version negotiation, network
-initialisation, and permit-join. Add commands one at a time.
+**Build:** the smallest ZNP client that works: `SYS_VERSION` (and `SYS_PING`),
+network startup, and permit-join. Add one command at a time.
 
 **Rust:** actor pattern (one task owns the port; others send messages), request
-correlation, state machines, good error context.
+correlation (match each `SREQ` to its `SRSP`), handling unsolicited `AREQ`
+callbacks, state machines, good error context.
 
-**ZigBee:** how a coordinator forms/restores a network and how commissioning
-works. Read the EZSP reference guide; use the `ezsp`/`ashv2` crates as reference
-implementations, not as dependencies, until you understand the layer.
+**ZigBee:** how the coordinator starts/restores a network and how commissioning
+works. Read TI's Z-Stack Monitor-and-Test (MT) API documentation; use
+Zigbee2MQTT's `zigbee-herdsman` Z-Stack adapter as a reference implementation,
+not as a dependency. Ignore EZSP/ASHv2 material — it is a different radio.
 
-**Done when:** `beehive permit-join 60` really opens the network.
+**Done when:** `beehive permit-join 60` really opens the CC2531's network.
 
 ### Step 6 — Devices
 
 **Build:** handle device announcements, interview manufacturer/model/endpoints,
-store a device table, send On/Off.
+store a device table, send On/Off through `AF_DATA_REQUEST`.
 
 **Done when:** you can toggle a real light and explain the whole path from CLI
 argument to radio byte.
@@ -220,14 +235,23 @@ Start with the primary sources; blog posts are for orientation, not truth.
   clear fundamentals book).
 - Wireshark's ZigBee dissectors: capture or open a `.pcap` and compare its
   field-by-field decoding with yours. `tshark -V` is excellent for this.
-- Zigbee2MQTT docs — practical device/cluster behaviour.
-- Reference implementations to read later: `zigbee-rs`, the `ezsp` and `ashv2`
-  crates, and `zigbee2mqtt`.
+- Zigbee2MQTT docs — practical device/cluster behaviour, and the Z-Stack
+  adapter notes for the CC2531.
+- **ZNP / host protocol:** TI's Z-Stack Monitor-and-Test (MT) API documentation
+  (in the Z-Stack SDK), plus Zigbee2MQTT's `zigbee-herdsman` Z-Stack adapter:
+  <https://github.com/Koenkk/zigbee-herdsman/tree/master/src/adapter/z-stack>
+- **CC2531 firmware:** <https://github.com/Koenkk/Z-Stack-firmware>
+- Reference implementations to read later: `zigbee2mqtt` / `zigbee-herdsman`
+  (ZNP driver). Do **not** start from EZSP/ASHv2 material — different protocol,
+  different radio.
 
-**Hardware** (when we get there)
+**Hardware**
 
-- See [docs/hardware.md](docs/hardware.md) for coordinator options, firmware,
-  and Linux serial permissions.
+- [docs/hardware.md](docs/hardware.md) — CC2531 firmware, flashing, Linux
+  serial permissions, and a preview of the ZNP frame format.
+- If you have a spare CC2531, flash it with sniffer firmware and capture real
+  over-the-air frames. Comparing your Step 1–3 output against Wireshark on a
+  real capture is the best feedback loop you can get.
 
 ---
 

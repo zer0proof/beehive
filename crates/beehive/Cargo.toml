@@ -1,6 +1,6 @@
 [package]
 name = "beehive"
-description = "A learning project: ZigBee from the bytes up, in Rust"
+description = "Suite of tools for interacting with ZigBee devices"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
