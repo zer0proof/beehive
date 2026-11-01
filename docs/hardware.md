@@ -2,8 +2,8 @@
 
 ## Supported coordinators (planned)
 
-The `ezsp` backend targets **Silicon Labs EmberZNet** NCPs speaking EZSP over
-ASHv2. Typical options:
+When the project reaches the hardware steps, the plan is to target **Silicon
+Labs EmberZNet** NCPs speaking EZSP over ASHv2. Typical options:
 
 | Device | Chip | Notes |
 |--------|------|-------|
@@ -12,7 +12,7 @@ ASHv2. Typical options:
 | Generic CC2652P USB stick | CC2652P | Must run **EZSP coordinator** firmware (not ZNP). |
 | Sonoff ZBDongle-P | CC2652P | Often flashed with Z-Stack/ZNP firmware — **not** supported by this backend. |
 
-Not supported by `beehive-ezsp`:
+Not targeted by this plan:
 
 - **CC2531 / CC2530** sticks running Z-Stack (ZNP protocol).
 - Devices that only expose Zigbee2MQTT's MQTT or HTTP interface.
@@ -39,8 +39,8 @@ once known — it matters for debugging.
    dmesg | tail -20
    ```
 
-   Prefer the stable `/dev/serial/by-id/...` path over `/dev/ttyUSB0` in
-   `config/beehive.toml`.
+   Prefer the stable `/dev/serial/by-id/...` path over `/dev/ttyUSB0` when we
+   add a serial configuration later.
 
 2. Check the owning group:
 
@@ -63,8 +63,8 @@ once known — it matters for debugging.
 ## Baud rate
 
 EZSP NCPs commonly use **115200**. Some flashed sticks use **460800** or
-**230400**. If `start()` fails during negotiation, try the other rates. The
-value lives under `[ezsp] baud` in the config file.
+**230400**. If a handshake fails during negotiation, try the other rates. The
+baud rate will be a configuration value once the serial step exists.
 
 ## Troubleshooting checklist
 

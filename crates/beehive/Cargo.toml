@@ -1,0 +1,14 @@
+[package]
+name = "beehive"
+description = "A learning project: ZigBee from the bytes up, in Rust"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "beehive"
+path = "src/main.rs"
+
+[lints]
+workspace = true
