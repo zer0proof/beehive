@@ -11,5 +11,6 @@
 *.swp
 .DS_Store
 
-AGENTS.md
-CONTEXT.md
+# Don't commit doc files for now
+*.md
+docs/
