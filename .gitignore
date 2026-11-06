@@ -12,5 +12,8 @@
 .DS_Store
 
 # Don't commit doc files for now
-*.md
-docs/
+LEARNING.md
+CONTEXT.md
+AGENTS.md
+notes/
+docs/decisions/
